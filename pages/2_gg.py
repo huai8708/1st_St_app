@@ -475,7 +475,7 @@ with elements("demo"):
                 # https://nivo.rocks/
 
                 nivo.Bump(
-                    data=json.loads(st.session_state.data),
+                    data=st.session_state.data,
                     colors={ "scheme": "spectral" },
                     lineWidth=3,
                     activeLineWidth=6,
