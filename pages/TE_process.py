@@ -133,7 +133,7 @@ test_loader = Data.DataLoader(
     num_workers=1,              # 多线程来读数据
 )
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-st.info("内核类型",device)
+
 
 
 with st.echo():
