@@ -6,19 +6,6 @@ from torch import nn
 import torch.nn.functional as F
 import streamlit as st
 
-tab1, tab2, tab3, tab4 = st.tabs(["TE过程介绍", "稀疏自编码网络", "LSTM网络", "对比分析"])
-
-with tab1:
-   st.header("TE过程介绍")
-   
-with tab2:
-    Sparse_autoencoder_main()
-
-with tab3:
-    lstm_main()
-
-with tab4:
-    st.write("to do")
 
 
 def data_process():
@@ -428,6 +415,19 @@ def lstm_main():
     st.write(fig)
 
 
+tab1, tab2, tab3, tab4 = st.tabs(["TE过程介绍", "稀疏自编码网络", "LSTM网络", "对比分析"])
+
+with tab1:
+   st.header("TE过程介绍")
+   
+with tab2:
+    Sparse_autoencoder_main()
+
+with tab3:
+    lstm_main()
+
+with tab4:
+    st.write("to do")
 
 
 
