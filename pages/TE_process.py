@@ -270,68 +270,68 @@ st.write("灵敏性(漏检率)", Det )
 
 st.stop()
 
-    print("csds")
+print("csds")
 
-    test_seq_x,test_seq_y=test_dataset[100:120]
-    print(test_seq_y)
-    Embedding = Sparse_AE.encoder(test_seq_x.to(device))
-    print(Embedding.shape,Embedding[0,:,:])
+test_seq_x,test_seq_y=test_dataset[100:120]
+print(test_seq_y)
+Embedding = Sparse_AE.encoder(test_seq_x.to(device))
+print(Embedding.shape,Embedding[0,:,:])
 
-    print((Embedding==0).sum().float()/(20*6*200))
-
-
+print((Embedding==0).sum().float()/(20*6*200))
 
 
 
-    #定义模型
-    class lstm(nn.Module):
-        def __init__(self, input_size=52, hidden_size=100, output_size=22, num_layers=3, batch_first=True, device=device):            
-            super(lstm, self).__init__()
-            self.input_size=input_size
-            self.hidden_size=hidden_size
-            self.output_size=output_size
-            self.num_layers=num_layers
-            self.batch_first=batch_first
-            self.device=device
-            
-            self.dropout = nn.Dropout(p=0.2)  #1/(1-p)
-            self.rnn = nn.LSTM(self.input_size, self.hidden_size, num_layers=self.num_layers, batch_first=self.batch_first)
-            self.reg = nn.Linear(self.hidden_size, self.output_size)
 
-        def init_weights(self, initrange=0.2):
-            """Initialize weights."""
-            for weight in self.rnn.parameters():
-                weight.data.uniform_(-initrange, initrange)
-            self.reg.weight.data.uniform_(-initrange, initrange)
-            self.reg.bias.data.uniform_(-initrange, initrange)
-            
-        def init_hidden(self, input):
-            minibatch_size = input.size(0) \
-                    if self.batch_first else input.size(1)
-            h0 = torch.zeros(self.num_layers, minibatch_size, self.hidden_size, device=self.device)
-            c0 = torch.zeros(self.num_layers, minibatch_size, self.hidden_size, device=self.device)
-            return (h0, c0) 
+
+#定义模型
+class lstm(nn.Module):
+    def __init__(self, input_size=52, hidden_size=100, output_size=22, num_layers=3, batch_first=True, device=device):            
+        super(lstm, self).__init__()
+        self.input_size=input_size
+        self.hidden_size=hidden_size
+        self.output_size=output_size
+        self.num_layers=num_layers
+        self.batch_first=batch_first
+        self.device=device
         
-        def forward(self, x):
-            h0_c0 = self.init_hidden(x)
-            out,ht_ct = self.rnn(self.dropout(x),None) 
-            b, l, h = out.shape  #(batch, seq, hidden)
-            #print(out.shape)
-            out = out.contiguous().view(l*b, h) #转化为线性层的输入方式
-            y = self.reg(self.dropout(out))
-            #y = y.view(b, l, -1)        
-            return y  
+        self.dropout = nn.Dropout(p=0.2)  #1/(1-p)
+        self.rnn = nn.LSTM(self.input_size, self.hidden_size, num_layers=self.num_layers, batch_first=self.batch_first)
+        self.reg = nn.Linear(self.hidden_size, self.output_size)
+
+    def init_weights(self, initrange=0.2):
+        """Initialize weights."""
+        for weight in self.rnn.parameters():
+            weight.data.uniform_(-initrange, initrange)
+        self.reg.weight.data.uniform_(-initrange, initrange)
+        self.reg.bias.data.uniform_(-initrange, initrange)
         
-        def load_model(self, load_dir):
-            if self.device.type == 'cuda':
-                self.load_state_dict(torch.load(open(load_dir, 'rb')))
-            else:
-                self.load_state_dict(torch.load(open(load_dir, 'rb'), map_location=lambda storage, loc: storage))
-
-        def save_model(self, save_dir):
-            torch.save(self.state_dict(), open(save_dir, 'wb'))
-
+    def init_hidden(self, input):
+        minibatch_size = input.size(0) \
+                if self.batch_first else input.size(1)
+        h0 = torch.zeros(self.num_layers, minibatch_size, self.hidden_size, device=self.device)
+        c0 = torch.zeros(self.num_layers, minibatch_size, self.hidden_size, device=self.device)
+        return (h0, c0) 
     
+    def forward(self, x):
+        h0_c0 = self.init_hidden(x)
+        out,ht_ct = self.rnn(self.dropout(x),None) 
+        b, l, h = out.shape  #(batch, seq, hidden)
+        #print(out.shape)
+        out = out.contiguous().view(l*b, h) #转化为线性层的输入方式
+        y = self.reg(self.dropout(out))
+        #y = y.view(b, l, -1)        
+        return y  
+    
+    def load_model(self, load_dir):
+        if self.device.type == 'cuda':
+            self.load_state_dict(torch.load(open(load_dir, 'rb')))
+        else:
+            self.load_state_dict(torch.load(open(load_dir, 'rb'), map_location=lambda storage, loc: storage))
+
+    def save_model(self, save_dir):
+        torch.save(self.state_dict(), open(save_dir, 'wb'))
+
+
 net = lstm(device=device)
 net.to(device)
 
@@ -343,32 +343,32 @@ optimizer = torch.optim.Adam(net.parameters(), lr=1e-2)
 
 
 def val_acc(net,test_loader):
-    Losses=[]
-    Acces=[] 
-    Dets=[]
-    #net.eval()
-    with torch.no_grad():
-        for step, (batch_x, batch_y) in enumerate(test_loader):
-          #if step<3:
-            batch_x=batch_x.to(device)
-            batch_y=batch_y.to(device)
-            out = net(batch_x)
-            batch_y=batch_y.view(-1)
-            loss = criterion(out,batch_y)
-            total = batch_y.size(0)
-            Losses.append(loss.item()/total)
-            
-            out=F.softmax(out,1)
-            _,index=out.max(dim=1)
-            #print(index.size(),index)
-            #print('test_result:',np.unique(index.cpu().numpy()))
-            
-            acc=(index==batch_y).sum().cpu().numpy()       
-            Acces.append(acc/total)
-            det=((index>0)==(batch_y>0)).sum().cpu().numpy()       
-            Dets.append(det/total)
-        #print(Losses,Acces)
-    return np.mean(Losses),np.mean(Acces),np.mean(Dets)
+Losses=[]
+Acces=[] 
+Dets=[]
+#net.eval()
+with torch.no_grad():
+    for step, (batch_x, batch_y) in enumerate(test_loader):
+        #if step<3:
+        batch_x=batch_x.to(device)
+        batch_y=batch_y.to(device)
+        out = net(batch_x)
+        batch_y=batch_y.view(-1)
+        loss = criterion(out,batch_y)
+        total = batch_y.size(0)
+        Losses.append(loss.item()/total)
+        
+        out=F.softmax(out,1)
+        _,index=out.max(dim=1)
+        #print(index.size(),index)
+        #print('test_result:',np.unique(index.cpu().numpy()))
+        
+        acc=(index==batch_y).sum().cpu().numpy()       
+        Acces.append(acc/total)
+        det=((index>0)==(batch_y>0)).sum().cpu().numpy()       
+        Dets.append(det/total)
+    #print(Losses,Acces)
+return np.mean(Losses),np.mean(Acces),np.mean(Dets)
 
 net.load_model("LSTM3_L10_epoch200.pth")
 #batch_size=64
