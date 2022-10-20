@@ -136,7 +136,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 
-with st.echo():
+st.info(
     '''
         self.dropout = nn.Dropout(p=0.2)  #1/(1-p)
         self.encoder=nn.Sequential(OrderedDict([
@@ -152,6 +152,7 @@ with st.echo():
                     ]))
         self.reg = nn.Linear(self.embedding_size, self.output_size)
     '''
+)
 
 from collections import OrderedDict
 
