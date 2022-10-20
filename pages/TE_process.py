@@ -275,6 +275,7 @@ def Sparse_autoencoder_main():
 
 def lstm_main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    
     train_loader, test_loader = data_process()
 
     with st.echo():
@@ -398,6 +399,7 @@ with tab2:
     Sparse_autoencoder_main()
 
 with tab3:
+    st.write("LSTM网络")
     lstm_main()
 
 with tab4:
