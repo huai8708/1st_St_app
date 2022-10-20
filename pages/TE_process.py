@@ -11,12 +11,12 @@ tab1, tab2, tab3, tab4 = st.tabs(["TE过程介绍", "稀疏自编码网络", "LS
 with tab1:
    st.header("TE过程介绍")
    
-
 with tab2:
     Sparse_autoencoder_main()
 
 with tab3:
     lstm_main()
+
 with tab4:
     st.write("to do")
 
