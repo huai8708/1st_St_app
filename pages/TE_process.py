@@ -7,9 +7,10 @@ import torch.nn.functional as F
 import streamlit as st
 
 @st.cache
-def readdat()
-data=np.load("data.npz")
-
+def readdat():
+    data=np.load("data.npz")
+    return data
+data = readdat()
 traindata_x,traindata_y,testdata_x,testdata_y=data['arr_0'],data['arr_1'],data['arr_2'],data['arr_3']
 
 st.write("TE过程的原始训练集维度",traindata_x.shape, traindata_y.shape)
@@ -129,6 +130,8 @@ test_loader = Data.DataLoader(
 )
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 st.info("内核类型",device)
+
+
 with st.echo():
 st.write('''
         self.dropout = nn.Dropout(p=0.2)  #1/(1-p)
