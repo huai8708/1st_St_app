@@ -276,6 +276,7 @@ def Sparse_autoencoder_main():
 def lstm_main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     train_loader, test_loader = data_process()
+
     with st.echo():
         class lstm(nn.Module):
             def __init__(self, input_size=52, hidden_size=100, output_size=22, num_layers=3, batch_first=True, device=device):            
@@ -324,7 +325,7 @@ def lstm_main():
             def save_model(self, save_dir):
                 torch.save(self.state_dict(), open(save_dir, 'wb'))
 
-    
+    st.write("初始化LSTM网络")
     net = lstm(device=device)
     net.to(device)
     criterion = nn.CrossEntropyLoss()
@@ -332,37 +333,9 @@ def lstm_main():
     #稀疏编码器加L1约束
     optimizer = torch.optim.Adam(net.parameters(), lr=1e-2)
 
-
-    def val_acc(net,test_loader):
-        Losses=[]
-        Acces=[] 
-        Dets=[]
-        #net.eval()
-        with torch.no_grad():
-            for step, (batch_x, batch_y) in enumerate(test_loader):
-            #if step<3:
-                batch_x=batch_x.to(device)
-                batch_y=batch_y.to(device)
-                out = net(batch_x)
-                batch_y=batch_y.view(-1)
-                loss = criterion(out,batch_y)
-                total = batch_y.size(0)
-                Losses.append(loss.item()/total)
-                
-                out=F.softmax(out,1)
-                _,index=out.max(dim=1)
-                #print(index.size(),index)
-                #print('test_result:',np.unique(index.cpu().numpy()))
-                
-                acc=(index==batch_y).sum().cpu().numpy()       
-                Acces.append(acc/total)
-                det=((index>0)==(batch_y>0)).sum().cpu().numpy()       
-                Dets.append(det/total)
-            #print(Losses,Acces)
-        return Acces,Dets
     net.load_model("LSTM3_L10_epoch200.pth")
     #batch_size=64
-
+    st.info("加载 LSTM3_L10_epoch200.pth")
 
     look_back=100
 
