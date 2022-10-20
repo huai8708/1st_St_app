@@ -6,12 +6,15 @@ from torch import nn
 import torch.nn.functional as F
 import streamlit as st
 
-@st.cache
-def readdat(name):
-    data=np.load(name)
-    return data
-name = "data.npz"
-data = readdat(name)
+
+#@st.cache
+#def readdat(name):
+#    data=np.load(name)
+#    return data
+#name = "data.npz"
+#data = readdat(name)
+
+data=np.load("data.npz")
 traindata_x,traindata_y,testdata_x,testdata_y=data['arr_0'],data['arr_1'],data['arr_2'],data['arr_3']
 
 st.write("TE过程的原始训练集维度",traindata_x.shape, traindata_y.shape)
