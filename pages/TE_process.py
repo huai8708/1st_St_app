@@ -8,6 +8,7 @@ import streamlit as st
 
 
 
+
 def data_process():
     def readdat(name):
         data=np.load(name)
@@ -268,10 +269,11 @@ def Sparse_autoencoder_main():
     lambd1=1e-4
     lambd2=100
     Acc, Det = val_AE(Sparse_AE,test_loader, lambd1, lambd2)   
-    st.write("精确率", Acc)
-    st.write("灵敏性(漏检率)", Det )
+    dd = {"Acc1":Acc, 
+    "Det1":Det}
 
-    st.stop()
+    st.write(dd)
+
 
 def lstm_main():
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -371,8 +373,9 @@ def lstm_main():
         Det[i]/=Total[i]
 
     #print(sum(Total)/6,Total)
-    st.write("Acc", Acc)
-    st.write("Det", Det)
+    dd = {"Acc1":Acc, 
+    "Det1":Det}
+    st.write(dd)
 
     fig = plt.figure(figsize=(12,8))
     sub1=plt.subplot(2,1,1)
