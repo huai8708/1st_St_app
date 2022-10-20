@@ -268,7 +268,9 @@ def Sparse_autoencoder_main():
     lambd1=1e-4
     lambd2=100
     Acc, Det = val_AE(Sparse_AE,test_loader, lambd1, lambd2)   
-    st.write({"Acc":Acc, "Det":Det })
+    dd = {"Acc":Acc, "Det":Det }
+    st.write(dd)
+    return dd 
 
 
 
@@ -366,8 +368,9 @@ def lstm_main():
     for i in range(22):
         Acc[i]/=Total[i]
         Det[i]/=Total[i]
-
-    st.write({"Acc":Acc, "Det":Det })
+    dd = {"Acc":Acc, "Det":Det }
+    st.write(dd)
+    return dd
 
 
 
@@ -385,20 +388,25 @@ with tab2:
     Sparse_autoencoder_main()
 
 with tab4:
+    dd1 = lstm_main()
+    dd2 = Sparse_autoencoder_main()
 
 
 
-    
     st.write("to do")
     fig = plt.figure(figsize=(12,8))
     sub1=plt.subplot(2,1,1)
     sub2=plt.subplot(2,1,2)
 
-    sub1.plot(Acc)
+    sub1.plot(dd1["Acc"],label= "lstm")
+    sub1.plot(dd2["Acc"],label= "autoencoder_")
     sub1.set_title(u'classfication accuracy')
     sub1.set_xticks(range(22))
     sub1.grid(True)
-    sub2.plot(Det)
+
+
+    sub2.plot(dd1["Det"],label= "lstm")
+    sub2.plot(dd2["Det"],label= "autoencoder_")
     sub2.set_title(u'detection accuracy')
     sub2.set_xticks(range(22))
     sub2.grid(True)
