@@ -274,7 +274,8 @@ def Sparse_autoencoder_main():
     st.stop()
 
 def lstm_main():
-
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    train_loader, test_loader = data_process()
     with st.echo():
         class lstm(nn.Module):
             def __init__(self, input_size=52, hidden_size=100, output_size=22, num_layers=3, batch_first=True, device=device):            
