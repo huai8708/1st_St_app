@@ -6,13 +6,14 @@ from torch import nn
 import torch.nn.functional as F
 import streamlit as st
 
-
+@st.cache
+def readdat()
 data=np.load("data.npz")
 
 traindata_x,traindata_y,testdata_x,testdata_y=data['arr_0'],data['arr_1'],data['arr_2'],data['arr_3']
 
-st.write("TE过程的训练集维度",traindata_x.shape, traindata_y.shape)
-st.write("TE过程的测试集维度",testdata_x.shape, testdata_y.shape)
+st.write("TE过程的原始训练集维度",traindata_x.shape, traindata_y.shape)
+st.write("TE过程的原始测试集维度",testdata_x.shape, testdata_y.shape)
 
 
 st.info("求正常样本的均值和方差，并以此为基准对所有数据做标准化")
@@ -39,9 +40,7 @@ fig = plt.figure(figsize=(12,4))
 plt.plot(norm)
 st.write(fig)
 
-st.stop()
-
-#！！！猜想：norm2大的类别对应的测试准确率要高一些，是否是正相关的？
+st.warning("！！！猜想：norm2大的类别对应的测试准确率要高一些，是否是正相关的？")
 
 #训练集中的故障数据前填充20个零向量，使得训练集为(22, 500, 52)
 
@@ -61,22 +60,16 @@ for i in range(1,22):
 traindata_x_pad=np.array(traindata_x_pad)
 traindata_y_pad=np.array(traindata_y_pad)
 traindata_y_pad=traindata_y_pad.reshape(traindata_y_pad.shape[0],traindata_y_pad.shape[1],-1)
-print(traindata_x_pad.shape,traindata_y_pad.shape)
+
 
 dataset1=np.concatenate((traindata_x_pad,traindata_y_pad),axis=2)
-print("dataset1.shape",dataset1.shape)
 
-
-
-#reshape测试集，使得训练集为(22, 960, 52)
-print(testdata_x2.shape,testdata_y.shape)
 
 testdata_x_pad=testdata_x2.reshape(22,-1,testdata_x2.shape[1])
 testdata_y_pad=testdata_y.reshape(22,-1,1)
 print(testdata_x_pad.shape,testdata_y_pad.shape)
 
 dataset2=np.concatenate((testdata_x_pad,testdata_y_pad),axis=2)
-print("dataset1.shape",dataset2.shape)
 
 
 def create_dataset(dataset, look_back=6):
@@ -93,34 +86,18 @@ def create_dataset(dataset, look_back=6):
 train_X, train_Y = create_dataset(dataset1)
 test_X, test_Y = create_dataset(dataset2)
 
+st.write("处理后的训练集维度", train_X.shape,train_Y.shape,train_X.dtype,train_Y.dtype)
+st.write("处理后的测试集维度", test_X.shape,test_Y.shape,test_X.dtype,test_Y.dtype)
 
-print(train_X.shape,train_Y.shape,train_X.dtype,train_Y.dtype)
-print(test_X.shape,test_Y.shape,test_X.dtype,test_Y.dtype)
 
-def onehot_encoder(y,cls=22):#y.shape=(n,l)
-    
-    y_hat=np.zeros((y.shape[0],y.shape[1],cls),dtype=np.int)
-    print(y_hat.shape)
-    for i in range(y.shape[0]):
-        for j in range (y.shape[1]):
-            index=int(y[i,j])
-            #print(index)
-            y_hat[i,j,index]=1
-    return y_hat
-
-#x=train_Y[(0,1000,5000),:]
-#print(x)
-#trainy_hat=onehot_encoder(x)
-#print(trainy_hat)
 
 data_all = np.concatenate((train_X,test_X),axis=0)
 label_all = np.concatenate((train_Y,test_Y),axis=0)
-print(data_all.shape,label_all.shape)
+st.write(data_all.shape,label_all.shape)
 
-#重新划分训练集和测试集
-#from sklearn.cross_validation import train_test_split
+
 from sklearn.model_selection import train_test_split
-
+st.info("重新划分训练集和测试集")
 train_X,test_X,train_Y,test_Y=train_test_split(data_all, label_all, test_size=0.2, random_state=99) 
 print(train_X.shape,test_X.shape,train_Y.shape,test_Y.shape)
 
@@ -129,10 +106,7 @@ train_x = (torch.from_numpy(train_X)).float()
 train_y = torch.from_numpy(train_Y).long()
 test_x = (torch.from_numpy(test_X)).float()
 test_y = torch.from_numpy(test_Y).long()
-print(train_x.dtype,train_x.size())
-print(test_x.dtype,test_x.size())
-print(train_y.dtype,train_y.size())
-print(test_y.dtype,test_y.size())
+
 
 # 先转换成 torch 能识别的 Dataset
 import torch.utils.data as Data
@@ -154,8 +128,23 @@ test_loader = Data.DataLoader(
     num_workers=1,              # 多线程来读数据
 )
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-#device = torch.device("cpu")
-print(device)
+st.info("内核类型",device)
+with st.echo():
+st.write('''
+        self.dropout = nn.Dropout(p=0.2)  #1/(1-p)
+        self.encoder=nn.Sequential(OrderedDict([
+                    ('sparse1',nn.Linear(self.input_size, self.input_size)),
+                    ('action1',nn.Tanh()),
+                    ('sparse2',nn.Linear(self.input_size, self.embedding_size)),
+                    ('action2',nn.Tanh())
+                    ]))
+        self.decoder=nn.Sequential(OrderedDict([
+                    ('fc1',nn.Linear(self.embedding_size, self.input_size)),
+                    ('action3',nn.Tanh()),
+                    ('fc2',nn.Linear(self.input_size, self.input_size))
+                    ]))
+        self.reg = nn.Linear(self.embedding_size, self.output_size)
+''')
 
 from collections import OrderedDict
 
@@ -213,7 +202,9 @@ class Sparse_autoencoder(nn.Module):
 
     def save_model(self, save_dir):
         torch.save(self.state_dict(), open(save_dir, 'wb'))
-        
+
+st.stop()
+
 Sparse_AE = Sparse_autoencoder(device=device)
 Sparse_AE.to(device)
 Loss_MSE = nn.MSELoss()
