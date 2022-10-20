@@ -5,8 +5,7 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 import streamlit as st
-
-
+from matplotlib import pyplot as plt
 
 
 def data_process():
@@ -42,7 +41,7 @@ def data_process():
         norm_i=np.mean(traindata_x2[500+(i-1)*480:500+i*480,:]**2)
         norm.append(norm_i)
 
-    from matplotlib import pyplot as plt
+    
     fig = plt.figure(figsize=(12,4))
     plt.plot(norm)
     st.write(fig)
@@ -269,10 +268,8 @@ def Sparse_autoencoder_main():
     lambd1=1e-4
     lambd2=100
     Acc, Det = val_AE(Sparse_AE,test_loader, lambd1, lambd2)   
-    dd = {"Acc1":Acc, 
-    "Det1":Det}
+    st.write({"Acc":Acc, "Det":Det })
 
-    st.write(dd)
 
 
 def lstm_main():
@@ -336,7 +333,7 @@ def lstm_main():
     #稀疏编码器加L1约束
     optimizer = torch.optim.Adam(net.parameters(), lr=1e-2)
 
-    net.load_model("LSTM3_L10_epoch200.pth")
+    net.load_model("LSTM3_L100_epoch20.pth")
     #batch_size=64
     st.info("加载 LSTM3_L10_epoch200.pth")
 
@@ -356,8 +353,6 @@ def lstm_main():
             _,index=out.max(dim=1)
             
             index=index.cpu().numpy()
-            ind=index.reshape(-1,look_back)
-            row=np.where(ind==15)[0] 
 
             batch_y=batch_y.cpu().numpy()
             #按类别统计正确率
@@ -372,11 +367,29 @@ def lstm_main():
         Acc[i]/=Total[i]
         Det[i]/=Total[i]
 
-    #print(sum(Total)/6,Total)
-    dd = {"Acc1":Acc, 
-    "Det1":Det}
-    st.write(dd)
+    st.write({"Acc":Acc, "Det":Det })
 
+
+
+
+tab1, tab2, tab3, tab4 = st.tabs(["TE过程介绍", "稀疏自编码网络", "LSTM网络", "对比分析"])
+
+with tab1:
+   st.header("TE过程介绍")
+   
+with tab3:
+    st.write("LSTM网络")
+    lstm_main()
+
+with tab2:
+    Sparse_autoencoder_main()
+
+with tab4:
+
+
+
+    
+    st.write("to do")
     fig = plt.figure(figsize=(12,8))
     sub1=plt.subplot(2,1,1)
     sub2=plt.subplot(2,1,2)
@@ -391,23 +404,6 @@ def lstm_main():
     sub2.grid(True)
 
     st.write(fig)
-
-
-tab1, tab2, tab3, tab4 = st.tabs(["TE过程介绍", "稀疏自编码网络", "LSTM网络", "对比分析"])
-
-with tab1:
-   st.header("TE过程介绍")
-   
-with tab2:
-    Sparse_autoencoder_main()
-
-with tab3:
-    st.write("LSTM网络")
-    lstm_main()
-
-with tab4:
-    st.write("to do")
-
 
 
 
