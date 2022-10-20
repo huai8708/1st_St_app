@@ -14,7 +14,6 @@ st.write(
     """
 )
 
-
 c1,c2 = st.columns(2)
 b1 = c1.button("c1")
 b2 = c2.button("c2")

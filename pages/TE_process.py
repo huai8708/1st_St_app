@@ -263,7 +263,7 @@ def Sparse_autoencoder_main():
         return Acc,Det
 
 
-    #Sparse_AE.save_model("SparseAE_nodropout_epoch200.pth")
+
     Sparse_AE.load_model("SparseAE_epoch200.pth")
     lambd1=1e-4
     lambd2=100
@@ -375,7 +375,7 @@ def lstm_main():
 
 
 
-tab1, tab2, tab3, tab4 = st.tabs(["TE过程介绍", "稀疏自编码网络", "LSTM网络", "对比分析"])
+tab1, tab2, tab3, tab4 = st.tabs(["TE过程介绍", "稀疏自编码网络", "LSTM网络", "对比分析"], gap="small")
 
 with tab1:
    st.header("TE过程介绍")
@@ -390,8 +390,6 @@ with tab2:
 with tab4:
     dd1 = lstm_main()
     dd2 = Sparse_autoencoder_main()
-
-
 
     st.write("to do")
     fig = plt.figure(figsize=(12,8))
