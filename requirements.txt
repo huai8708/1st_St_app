@@ -1,1 +1,2 @@
 streamlit-elements==0.1.0
+torch
