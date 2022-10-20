@@ -133,7 +133,7 @@ st.info("内核类型",device)
 
 
 with st.echo():
-st.write('''
+    st.write('''
         self.dropout = nn.Dropout(p=0.2)  #1/(1-p)
         self.encoder=nn.Sequential(OrderedDict([
                     ('sparse1',nn.Linear(self.input_size, self.input_size)),
@@ -147,7 +147,7 @@ st.write('''
                     ('fc2',nn.Linear(self.input_size, self.input_size))
                     ]))
         self.reg = nn.Linear(self.embedding_size, self.output_size)
-''')
+    ''')
 
 from collections import OrderedDict
 
