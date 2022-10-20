@@ -137,7 +137,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 with st.echo():
-    st.write('''
+    '''
         self.dropout = nn.Dropout(p=0.2)  #1/(1-p)
         self.encoder=nn.Sequential(OrderedDict([
                     ('sparse1',nn.Linear(self.input_size, self.input_size)),
@@ -151,7 +151,7 @@ with st.echo():
                     ('fc2',nn.Linear(self.input_size, self.input_size))
                     ]))
         self.reg = nn.Linear(self.embedding_size, self.output_size)
-    ''')
+    '''
 
 from collections import OrderedDict
 
@@ -210,7 +210,7 @@ class Sparse_autoencoder(nn.Module):
     def save_model(self, save_dir):
         torch.save(self.state_dict(), open(save_dir, 'wb'))
 
-st.stop()
+
 
 Sparse_AE = Sparse_autoencoder(device=device)
 Sparse_AE.to(device)
@@ -232,12 +232,6 @@ def L1_penalty(param, debug=False):
         
     return total_L1_norm
 
-test=torch.tensor([[[-1.0,-2.0],
-                   [1.0,2.0]],
-                   [[-1.0,-2.0],
-                   [1.0,2.0]]])
-print(test.shape)
-print(L1_penalty(test,debug=True))
 
 def val_AE(net,test_loader,lambd1,lambd2):
     Losses=[]
@@ -281,34 +275,14 @@ def val_AE(net,test_loader,lambd1,lambd2):
     return np.mean(Losses),np.mean(Acces),Acc,Det
 
 
-
-'''
-print("classication_acc",allclass_acc[-1])
-print("det_acc",alldet_acc[-1])
-k=[1,2,4,5,6,7,8,10,11,12,13,14,16,17,18,19,20]
-det=[]
-for i in k:
-    det.append(alldet_acc[i])
-det_mean=np.mean(np.array(det))
-print("mean",det_mean)
-
-#迭代200次, lambd=1e-5
-print(test_Acc[-1])
-plt.plot(train_Loss[1:])
-plt.plot(test_Loss)
-plt.plot(train_Acc)
-plt.plot(test_Acc)
-plt.show()
-'''
-
 #Sparse_AE.save_model("SparseAE_nodropout_epoch200.pth")
- 
 Sparse_AE.load_model("SparseAE_epoch200.pth")
 
 Loss,ACC = val_AE(Sparse_AE,test_loader,lambd1=1e-4, lambd2=100)   
 print(Loss)
 print(ACC)
 
+st.stop()
 
 print("csds")
 
