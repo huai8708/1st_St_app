@@ -7,14 +7,14 @@ import torch.nn.functional as F
 import streamlit as st
 
 
-#@st.cache
-#def readdat(name):
-#    data=np.load(name)
-#    return data
-#name = "data.npz"
-#data = readdat(name)
 
-data=np.load("data.npz")
+def readdat(name):
+    data=np.load(name)
+    return data
+name = "data.npz"
+data = readdat(name)
+
+#data=np.load("data.npz")
 traindata_x,traindata_y,testdata_x,testdata_y=data['arr_0'],data['arr_1'],data['arr_2'],data['arr_3']
 
 st.write("TE过程的原始训练集维度",traindata_x.shape, traindata_y.shape)
@@ -122,7 +122,7 @@ train_loader = Data.DataLoader(
     dataset=train_dataset,      # torch TensorDataset format
     batch_size=64,      # mini batch size
     shuffle=True,               # 要不要打乱数据 (打乱比较好)
-    num_workers=1,              # 多线程来读数据
+    num_workers=0,              # 多线程来读数据
 )
 test_dataset = Data.TensorDataset(test_x,test_y)
 # 把 dataset 放入 DataLoader
@@ -130,86 +130,70 @@ test_loader = Data.DataLoader(
     dataset=test_dataset,      # torch TensorDataset format
     batch_size=64,      # mini batch size
     #shuffle=True,               # 要不要打乱数据 (打乱比较好)
-    num_workers=1,              # 多线程来读数据
+    num_workers=0,              # 多线程来读数据
 )
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 
 
-st.info(
-    '''
-        self.dropout = nn.Dropout(p=0.2)  #1/(1-p)
-        self.encoder=nn.Sequential(OrderedDict([
-                    ('sparse1',nn.Linear(self.input_size, self.input_size)),
-                    ('action1',nn.Tanh()),
-                    ('sparse2',nn.Linear(self.input_size, self.embedding_size)),
-                    ('action2',nn.Tanh())
-                    ]))
-        self.decoder=nn.Sequential(OrderedDict([
-                    ('fc1',nn.Linear(self.embedding_size, self.input_size)),
-                    ('action3',nn.Tanh()),
-                    ('fc2',nn.Linear(self.input_size, self.input_size))
-                    ]))
-        self.reg = nn.Linear(self.embedding_size, self.output_size)
-    '''
-)
 
 from collections import OrderedDict
 
-class Sparse_autoencoder(nn.Module):
-    def __init__(self, input_size=52, embedding_size=30, output_size=22, device=device):
-        super(Sparse_autoencoder,self).__init__()
-        self.input_size=input_size
-        self.embedding_size=embedding_size
-        self.output_size=output_size
-        self.device=device
+with st.echo():
+    class Sparse_autoencoder(nn.Module):
+        def __init__(self, input_size=52, embedding_size=30, output_size=22, device=device):
+            super(Sparse_autoencoder,self).__init__()
+            self.input_size=input_size
+            self.embedding_size=embedding_size
+            self.output_size=output_size
+            self.device=device
+            
+            self.dropout = nn.Dropout(p=0.2)  #1/(1-p)
+            self.encoder=nn.Sequential(OrderedDict([
+                        ('sparse1',nn.Linear(self.input_size, self.input_size)),
+                        ('action1',nn.Tanh()),
+                        ('sparse2',nn.Linear(self.input_size, self.embedding_size)),
+                        ('action2',nn.Tanh())
+                        ]))
+            self.decoder=nn.Sequential(OrderedDict([
+                        ('fc1',nn.Linear(self.embedding_size, self.input_size)),
+                        ('action3',nn.Tanh()),
+                        ('fc2',nn.Linear(self.input_size, self.input_size))
+                        ]))
+            self.reg = nn.Linear(self.embedding_size, self.output_size)
+            
+        def init_weights(self, initrange=0.2):
+            """Initialize weights."""
+            self.encoder.sparse1.weight.data.uniform_(-initrange, initrange)
+            self.encoder.sparse1.bias.data.uniform_(-initrange, initrange)
+            self.encoder.sparse2.weight.data.uniform_(-initrange, initrange)
+            self.encoder.sparse2.bias.data.uniform_(-initrange, initrange) 
+            self.decoder.fc1.weight.data.uniform_(-initrange, initrange)
+            self.decoder.fc1.bias.data.uniform_(-initrange, initrange)
+            self.decoder.fc2.weight.data.uniform_(-initrange, initrange)
+            self.decoder.fc2.bias.data.uniform_(-initrange, initrange)
+            self.reg.weight.data.uniform_(-initrange, initrange)
+            self.reg.bias.data.uniform_(-initrange, initrange)
+            
+        def forward(self, x): 
+            b, l, h = x.shape  #(batch, seq, hidden)
+            x = x.contiguous().view(l*b,-1) 
+            e = self.encoder(self.dropout(x))
+            x_bar = self.decoder(e)
+            #out = self.reg(self.dropout(e))
+            out = self.reg(e)
+            x_bar = x_bar.contiguous().view(b,l,-1)
+            
+            return x_bar,e,out
         
-        self.dropout = nn.Dropout(p=0.2)  #1/(1-p)
-        self.encoder=nn.Sequential(OrderedDict([
-                    ('sparse1',nn.Linear(self.input_size, self.input_size)),
-                    ('action1',nn.Tanh()),
-                    ('sparse2',nn.Linear(self.input_size, self.embedding_size)),
-                    ('action2',nn.Tanh())
-                    ]))
-        self.decoder=nn.Sequential(OrderedDict([
-                    ('fc1',nn.Linear(self.embedding_size, self.input_size)),
-                    ('action3',nn.Tanh()),
-                    ('fc2',nn.Linear(self.input_size, self.input_size))
-                    ]))
-        self.reg = nn.Linear(self.embedding_size, self.output_size)
-        
-    def init_weights(self, initrange=0.2):
-        """Initialize weights."""
-        self.encoder.sparse1.weight.data.uniform_(-initrange, initrange)
-        self.encoder.sparse1.bias.data.uniform_(-initrange, initrange)
-        self.encoder.sparse2.weight.data.uniform_(-initrange, initrange)
-        self.encoder.sparse2.bias.data.uniform_(-initrange, initrange) 
-        self.decoder.fc1.weight.data.uniform_(-initrange, initrange)
-        self.decoder.fc1.bias.data.uniform_(-initrange, initrange)
-        self.decoder.fc2.weight.data.uniform_(-initrange, initrange)
-        self.decoder.fc2.bias.data.uniform_(-initrange, initrange)
-        self.reg.weight.data.uniform_(-initrange, initrange)
-        self.reg.bias.data.uniform_(-initrange, initrange)
-        
-    def forward(self, x): 
-        b, l, h = x.shape  #(batch, seq, hidden)
-        x = x.contiguous().view(l*b,-1) 
-        e = self.encoder(self.dropout(x))
-        x_bar = self.decoder(e)
-        #out = self.reg(self.dropout(e))
-        out = self.reg(e)
-        x_bar = x_bar.contiguous().view(b,l,-1)
-        
-        return x_bar,e,out
-    
-    def load_model(self, load_dir):
-        if self.device.type == 'cuda':
-            self.load_state_dict(torch.load(open(load_dir, 'rb')))
-        else:
-            self.load_state_dict(torch.load(open(load_dir, 'rb'), map_location=lambda storage, loc: storage))
+        def load_model(self, load_dir):
+            if self.device.type == 'cuda':
+                self.load_state_dict(torch.load(open(load_dir, 'rb')))
+            else:
+                self.load_state_dict(torch.load(open(load_dir, 'rb'), map_location=lambda storage, loc: storage))
 
-    def save_model(self, save_dir):
-        torch.save(self.state_dict(), open(save_dir, 'wb'))
+        def save_model(self, save_dir):
+            torch.save(self.state_dict(), open(save_dir, 'wb'))
 
 
 
@@ -218,7 +202,7 @@ Sparse_AE.to(device)
 Loss_MSE = nn.MSELoss()
 Loss_CE = nn.CrossEntropyLoss()
 optimizer_SparseAE = torch.optim.SGD(Sparse_AE.parameters(), lr=1e-3,momentum=0.9)
-              
+            
 
 #稀疏编码器加L1约束
 def L1_penalty(param, debug=False):
@@ -243,7 +227,7 @@ def val_AE(net,test_loader,lambd1,lambd2):
     #net.eval()
     with torch.no_grad():
         for step, (batch_x, batch_y) in enumerate(test_loader):
-          #if step<3:
+        #if step<3:
             batch_x=batch_x.to(device)
             batch_y=batch_y.to(device)
             batch_y=batch_y.view(-1)
@@ -261,7 +245,7 @@ def val_AE(net,test_loader,lambd1,lambd2):
             acc=(index==batch_y).sum().cpu().numpy() 
             Acces.append(acc/total)
             
-              #按类别统计正确率
+            #按类别统计正确率
             for i in range(batch_y.shape[0]):
                 Total[batch_y[i]]+=1
                 if index[i]==batch_y[i]:
@@ -269,82 +253,83 @@ def val_AE(net,test_loader,lambd1,lambd2):
                 if (index[i]>0)==(batch_y[i]>0):
                     Det[batch_y[i]]+=1
     for i in range(22):
-        Acc[i]/=Total[i]
+        Acc[i]/=Total[i] 
         Det[i]/=Total[i]
-   
+
         #print(Losses)
-    return np.mean(Losses),np.mean(Acces),Acc,Det
+    return Acc,Det
 
 
 #Sparse_AE.save_model("SparseAE_nodropout_epoch200.pth")
 Sparse_AE.load_model("SparseAE_epoch200.pth")
-
-Loss,ACC = val_AE(Sparse_AE,test_loader,lambd1=1e-4, lambd2=100)   
-print(Loss)
-print(ACC)
+lambd1=1e-4
+lambd2=100
+Acc, Det = val_AE(Sparse_AE,test_loader, lambd1, lambd2)   
+st.write("精确率", Acc)
+st.write("灵敏性(漏检率)", Det )
 
 st.stop()
 
-print("csds")
+    print("csds")
 
-test_seq_x,test_seq_y=test_dataset[100:120]
-print(test_seq_y)
-Embedding = Sparse_AE.encoder(test_seq_x.to(device))
-print(Embedding.shape,Embedding[0,:,:])
+    test_seq_x,test_seq_y=test_dataset[100:120]
+    print(test_seq_y)
+    Embedding = Sparse_AE.encoder(test_seq_x.to(device))
+    print(Embedding.shape,Embedding[0,:,:])
 
-print((Embedding==0).sum().float()/(20*6*200))
-
-
+    print((Embedding==0).sum().float()/(20*6*200))
 
 
 
-#定义模型
-class lstm(nn.Module):
-    def __init__(self, input_size=52, hidden_size=100, output_size=22, num_layers=3, batch_first=True, device=device):            
-          super(lstm, self).__init__()
-          self.input_size=input_size
-          self.hidden_size=hidden_size
-          self.output_size=output_size
-          self.num_layers=num_layers
-          self.batch_first=batch_first
-          self.device=device
+
+
+    #定义模型
+    class lstm(nn.Module):
+        def __init__(self, input_size=52, hidden_size=100, output_size=22, num_layers=3, batch_first=True, device=device):            
+            super(lstm, self).__init__()
+            self.input_size=input_size
+            self.hidden_size=hidden_size
+            self.output_size=output_size
+            self.num_layers=num_layers
+            self.batch_first=batch_first
+            self.device=device
+            
+            self.dropout = nn.Dropout(p=0.2)  #1/(1-p)
+            self.rnn = nn.LSTM(self.input_size, self.hidden_size, num_layers=self.num_layers, batch_first=self.batch_first)
+            self.reg = nn.Linear(self.hidden_size, self.output_size)
+
+        def init_weights(self, initrange=0.2):
+            """Initialize weights."""
+            for weight in self.rnn.parameters():
+                weight.data.uniform_(-initrange, initrange)
+            self.reg.weight.data.uniform_(-initrange, initrange)
+            self.reg.bias.data.uniform_(-initrange, initrange)
+            
+        def init_hidden(self, input):
+            minibatch_size = input.size(0) \
+                    if self.batch_first else input.size(1)
+            h0 = torch.zeros(self.num_layers, minibatch_size, self.hidden_size, device=self.device)
+            c0 = torch.zeros(self.num_layers, minibatch_size, self.hidden_size, device=self.device)
+            return (h0, c0) 
         
-          self.dropout = nn.Dropout(p=0.2)  #1/(1-p)
-          self.rnn = nn.LSTM(self.input_size, self.hidden_size, num_layers=self.num_layers, batch_first=self.batch_first)
-          self.reg = nn.Linear(self.hidden_size, self.output_size)
-
-    def init_weights(self, initrange=0.2):
-        """Initialize weights."""
-        for weight in self.rnn.parameters():
-            weight.data.uniform_(-initrange, initrange)
-        self.reg.weight.data.uniform_(-initrange, initrange)
-        self.reg.bias.data.uniform_(-initrange, initrange)
+        def forward(self, x):
+            h0_c0 = self.init_hidden(x)
+            out,ht_ct = self.rnn(self.dropout(x),None) 
+            b, l, h = out.shape  #(batch, seq, hidden)
+            #print(out.shape)
+            out = out.contiguous().view(l*b, h) #转化为线性层的输入方式
+            y = self.reg(self.dropout(out))
+            #y = y.view(b, l, -1)        
+            return y  
         
-    def init_hidden(self, input):
-        minibatch_size = input.size(0) \
-                if self.batch_first else input.size(1)
-        h0 = torch.zeros(self.num_layers, minibatch_size, self.hidden_size, device=self.device)
-        c0 = torch.zeros(self.num_layers, minibatch_size, self.hidden_size, device=self.device)
-        return (h0, c0) 
-    
-    def forward(self, x):
-         h0_c0 = self.init_hidden(x)
-         out,ht_ct = self.rnn(self.dropout(x),None) 
-         b, l, h = out.shape  #(batch, seq, hidden)
-         #print(out.shape)
-         out = out.contiguous().view(l*b, h) #转化为线性层的输入方式
-         y = self.reg(self.dropout(out))
-         #y = y.view(b, l, -1)        
-         return y  
-    
-    def load_model(self, load_dir):
-        if self.device.type == 'cuda':
-            self.load_state_dict(torch.load(open(load_dir, 'rb')))
-        else:
-            self.load_state_dict(torch.load(open(load_dir, 'rb'), map_location=lambda storage, loc: storage))
+        def load_model(self, load_dir):
+            if self.device.type == 'cuda':
+                self.load_state_dict(torch.load(open(load_dir, 'rb')))
+            else:
+                self.load_state_dict(torch.load(open(load_dir, 'rb'), map_location=lambda storage, loc: storage))
 
-    def save_model(self, save_dir):
-        torch.save(self.state_dict(), open(save_dir, 'wb'))
+        def save_model(self, save_dir):
+            torch.save(self.state_dict(), open(save_dir, 'wb'))
 
     
 net = lstm(device=device)
