@@ -13,10 +13,10 @@ with tab1:
    
 
 with tab2:
-   Sparse_autoencoder_main()
+    Sparse_autoencoder_main()
 
 with tab3:
-   lstm_main()
+    lstm_main()
 with tab4:
     st.write("to do")
 
